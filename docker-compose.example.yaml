@@ -1,0 +1,68 @@
+# ==========================================
+# docker-compose.yaml
+# ==========================================
+services:
+  # PaperMC 마인크래프트 서버 (테스트 대상)
+  mc-server:
+    image: itzg/minecraft-server
+    container_name: mc-server
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "LATEST"
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: "rcon_test_password"
+      RCON_PORT: "25575"
+    ports:
+      - "25565:25565"
+    volumes:
+      - mc-data:/data
+
+  # mcmgb 백업 데몬
+  mcmgb:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mcmgb
+    depends_on:
+      - mc-server
+    environment:
+      # 1. MEGA 인증 정보 (1회성 주입 후 엔트리포인트에서 삭제됨)
+      - MEGA_EMAIL=your_mega_email@example.com
+      - MEGA_PASSWORD=your_mega_password
+      
+      # 2. mcmgb 데몬 설정
+      - MCMGB_DAEMON_INTERVAL=12h
+      - MCMGB_STARTUP_RETRY=10
+      - MCMGB_STARTUP_RETRY_INTERVAL=1m
+      
+      # 3. 마인크래프트 및 백업 경로 설정
+      - MCMGB_MC_SERVER_DIR=/home/minecraft/server
+      - MCMGB_MC_BACKUP_DIR=/home/minecraft/backups
+      
+      # 4. MEGA 클라우드 저장소 설정
+      - MCMGB_MEGA_REMOTE_DIR=/MinecraftBackups
+      - MCMGB_MEGA_EXTRA_MARGIN_GB=5
+      - MCMGB_MEGA_KEEP_VERSIONS=3
+      
+      # 5. Shoutrrr 알림 설정
+      - MCMGB_SHOUTRRR_URL=discord://YOUR_TOKEN@YOUR_WEBHOOK_ID
+      
+      # 6. RCON 연동 설정 (호스트 네임은 mc-server로 지정)
+      - MCMGB_RCON_ENABLE=true
+      - MCMGB_RCON_ADDRESS=mc-server:25575
+      - MCMGB_RCON_PASSWORD=rcon_test_password
+      
+      # [선택] 커스텀 설정 파일을 마운트해서 쓸 경우 경로 지정
+      # - CONFIG_PATH=/config/custom_config.toml
+    volumes:
+      # 마인크래프트 서버 데이터를 읽기 전용으로 마운트
+      - mc-data:/home/minecraft/server:ro
+      # 압축을 수행할 임시 저장소 마운트
+      - ./backups:/home/minecraft/backups
+      
+      # [선택] 환경변수 대신 직접 config.toml을 마운트하여 사용할 경우 아래 주석 해제
+      # - ./config.toml:/config/config.toml:ro
+
+volumes:
+  mc-data:

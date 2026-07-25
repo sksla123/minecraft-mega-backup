@@ -1,0 +1,59 @@
+# ==========================================
+# docker/Dockerfile
+# ==========================================
+# Stage 1: MegaCMD 빌더
+FROM debian:bookworm-slim AS mega-builder
+
+RUN --mount=type=cache,id=apt-builder-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-builder-lib,target=/var/lib/apt,sharing=locked \
+    rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    build-essential git zip unzip pkg-config autoconf automake autoconf-archive \
+    libtool libtool-bin m4 nasm libfuse-dev \
+    libcurl4-openssl-dev libsqlite3-dev libcrypto++-dev libc-ares-dev \
+    libsodium-dev libpcre3-dev libreadline-dev libssl-dev zlib1g-dev \
+    ca-certificates cmake curl python3 tar ninja-build \
+    libfreeimage-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+
+WORKDIR /build
+RUN git clone https://github.com/meganz/MEGAcmd.git . && \
+    git submodule update --init --recursive
+
+# CMAKE_INSTALL_PREFIX를 /usr로 지정하여 시스템 표준 경로에 바로 설치
+RUN --mount=type=cache,id=cmake-cache,target=/docker/cache,sharing=locked \
+    cmake -B build/build-cmake-Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+RUN --mount=type=cache,id=cmake-cache,target=/docker/cache,sharing=locked \
+    cmake --build build/build-cmake-Release -j$(nproc)
+
+RUN cmake --install build/build-cmake-Release && ldconfig
+
+
+# Stage 2: Rust(mcmgb) 데몬 빌더
+FROM rust:1-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y pkg-config libssl-dev
+
+WORKDIR /app
+COPY . .
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo build --release && \
+    cp target/release/mcmgb /mcmgb
+
+
+# Stage 3: 통합 실행 이미지 (mega-builder 베이스)
+FROM mega-builder AS final
+
+COPY --from=rust-builder /mcmgb /usr/bin/mcmgb
+RUN chmod +x /usr/bin/mcmgb
+
+COPY docker/entrypoint.sh /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh
+
+# 빌드 임시 디렉터리 정리
+RUN rm -rf /build
+
+WORKDIR /app
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]

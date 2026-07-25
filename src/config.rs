@@ -1,3 +1,4 @@
+// src/config.rs
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -25,7 +26,7 @@ pub struct MinecraftConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MegaConfig {
     pub remote_dir: String,
-    pub reserve_gb: u64,
+    pub extra_margin_gb: u64,
     pub keep_versions: usize,
 }
 

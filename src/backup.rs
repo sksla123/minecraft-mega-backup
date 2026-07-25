@@ -49,8 +49,8 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
     let df_output = run_mega_cmd("mega-df", &[])?;
     let mega_free_bytes = parse_mega_free_space(&df_output)?;
     
-    let reserve_bytes = config.mega.reserve_gb * 1024 * 1024 * 1024;
-    let required_bytes = mc_size_bytes + reserve_bytes;
+    let extra_margin_bytes = config.mega.extra_margin_gb * 1024 * 1024 * 1024;
+    let required_bytes = mc_size_bytes + extra_margin_bytes;
 
     let mega_free_gb = mega_free_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
     let required_gb = required_bytes as f64 / (1024.0 * 1024.0 * 1024.0);
@@ -127,3 +127,4 @@ pub fn run(config: &Config) -> anyhow::Result<()> {
     notify(shoutrrr_url, "✅ 모든 백업 프로세스가 성공적으로 완료되었습니다.");
     Ok(())
 }
+

@@ -1,3 +1,4 @@
+// src/check.rs
 use std::path::Path;
 use std::process::Command;
 use crate::config::Config;
@@ -110,13 +111,10 @@ pub fn run(config: &Config) {
     }
 }
 
-/// 데몬 시작 전 백그라운드 환경(RCON 포트 오픈 여부, MEGA 로그인 여부)을 점검하는 래퍼 함수
 pub fn verify_startup(config: &Config) -> anyhow::Result<()> {
-    // 1. MEGAcmd 상태 확인
     run_mega_cmd("mega-whoami", &[])
         .map_err(|e| anyhow::anyhow!("MEGA 연동 확인 실패: {}", e))?;
 
-    // 2. 마인크래프트 서버 RCON 포트 오픈 및 접속 대기 확인
     if let Some(rcon_cfg) = &config.rcon {
         if rcon_cfg.enable {
             let rt = tokio::runtime::Runtime::new().unwrap();
