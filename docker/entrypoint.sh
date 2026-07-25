@@ -11,14 +11,12 @@ echo "mcmgb Docker Entrypoint"
 echo "========================================"
 
 echo "MEGAcmd 데몬을 백그라운드에서 시작합니다..."
-# 데몬 실행 로그를 버리지 않고 남김
 mega-cmd-server &
 
 echo "MEGAcmd 데몬의 준비 완료를 대기 중..."
 MAX_RETRIES=30
 RETRY_COUNT=0
 
-# mega-version 명령어는 로그인 여부와 관계없이 서버와 통신만 되면 0을 반환합니다.
 until mega-version > /dev/null 2>&1 || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
     sleep 1
     RETRY_COUNT=$((RETRY_COUNT + 1))
@@ -36,11 +34,16 @@ fi
 echo "MEGAcmd 데몬 준비 완료."
 
 if [ -n "$MEGA_EMAIL" ] && [ -n "$MEGA_PASSWORD" ]; then
-    echo "MEGA 로그인을 시도합니다..."
-    if ! mega-login "$MEGA_EMAIL" "$MEGA_PASSWORD"; then
-        echo "첫 번째 로그인 시도 실패. 3초 후 다시 시도합니다..."
-        sleep 3
-        mega-login "$MEGA_EMAIL" "$MEGA_PASSWORD"
+    echo "MEGA 로그인 상태를 확인합니다..."
+    if mega-whoami > /dev/null 2>&1; then
+        echo "이미 MEGA에 로그인되어 있습니다."
+    else
+        echo "MEGA 로그인을 시도합니다..."
+        if ! mega-login "$MEGA_EMAIL" "$MEGA_PASSWORD"; then
+            echo "첫 번째 로그인 시도 실패. 3초 후 다시 시도합니다..."
+            sleep 3
+            mega-login "$MEGA_EMAIL" "$MEGA_PASSWORD"
+        fi
     fi
 
     unset MEGA_EMAIL
@@ -89,4 +92,3 @@ rm -f "$TMP_CONFIG"
 
 echo "mcmgb 데몬 프로세스를 시작합니다..."
 exec mcmgb --config "$CONFIG_FILE"
-
