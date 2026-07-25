@@ -24,3 +24,4 @@ pub struct Cli {
     #[arg(long, help = "재시도 간 대기 시간을 지정합니다 (예: 30s, 1m).")]
     pub retry_interval: Option<String>,
 }
+

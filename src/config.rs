@@ -41,3 +41,4 @@ pub struct RconConfig {
     pub address: String,
     pub password: String,
 }
+

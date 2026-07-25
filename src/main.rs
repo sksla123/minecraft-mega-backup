@@ -79,3 +79,4 @@ fn main() {
         thread::sleep(Duration::from_secs(interval_secs));
     }
 }
+

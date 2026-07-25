@@ -132,3 +132,4 @@ pub fn verify_startup(config: &Config) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
