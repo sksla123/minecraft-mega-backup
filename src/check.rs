@@ -122,7 +122,7 @@ pub fn verify_startup(config: &Config) -> anyhow::Result<()> {
                 match rcon::Connection::builder()
                     .enable_minecraft_quirks(true)
                     .connect(&rcon_cfg.address, &rcon_cfg.password)
-                    .await 
+                    .await
                 {
                     Ok(_) => Ok(()),
                     Err(e) => Err(anyhow::anyhow!("RCON 포트 접속 실패 (마인크래프트 부팅 대기 중일 수 있음): {}", e)),
@@ -132,4 +132,3 @@ pub fn verify_startup(config: &Config) -> anyhow::Result<()> {
     }
     Ok(())
 }
-
