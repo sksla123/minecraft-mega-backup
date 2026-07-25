@@ -34,11 +34,21 @@ fi
 echo "MEGAcmd 데몬 준비 완료."
 
 if [ -n "$MEGA_EMAIL" ] && [ -n "$MEGA_PASSWORD" ]; then
-    echo "MEGA 로그인 상태를 확인합니다..."
-    if mega-whoami > /dev/null 2>&1; then
-        echo "이미 MEGA에 로그인되어 있습니다."
+    echo "MEGA 로그인 상태를 확인하는 중..."
+    
+    LOGGED_IN=false
+    for i in {1..10}; do
+        if mega-whoami > /dev/null 2>&1; then
+            LOGGED_IN=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "$LOGGED_IN" = true ]; then
+        echo "이미 MEGA 세션이 활성화되어 있습니다."
     else
-        echo "MEGA 로그인을 시도합니다..."
+        echo "활성 세션이 없어 로그인을 시도합니다..."
         if ! mega-login "$MEGA_EMAIL" "$MEGA_PASSWORD"; then
             echo "첫 번째 로그인 시도 실패. 3초 후 다시 시도합니다..."
             sleep 3
